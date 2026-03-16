@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MouseMovements — Algorithm Visualizer</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500&display=swap');
+
+    :root {
+      --bg: #080810;
+      --bg2: #0f0f1a;
+      --bg3: #16162a;
+      --bg4: #1e1e35;
+      --border: rgba(255, 255, 255, 0.07);
+      --border2: rgba(255, 255, 255, 0.12);
+      --text: #e8e8f4;
+      --muted: #6b6b90;
+      --faint: #2e2e50;
+
+      --linear: #4ade80;
+      --wind: #fb923c;
+      --sigma: #818cf8;
+
+      --linear-dim: rgba(74, 222, 128, 0.15);
+      --wind-dim: rgba(251, 146, 60, 0.15);
+      --sigma-dim: rgba(129, 140, 248, 0.15);
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* subtle grid bg */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px 60px;
+    }
+
+    /* ── Header ── */
+    header {
+      padding: 32px 0 28px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 32px;
+    }
+
+    .logo {
+      font-family: 'Space Mono', monospace;
+      font-size: 20px;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .logo span {
+      color: var(--sigma);
+    }
+
+    .tagline {
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    .header-badges {
+      display: flex;
+      gap: 8px;
+    }
+
+    .badge {
+      font-size: 11px;
+      font-family: 'Space Mono', monospace;
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px solid var(--border2);
+      color: var(--muted);
+      background: var(--bg3);
+    }
+
+    /* ── Layout ── */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 20px;
+      align-items: start;
+    }
+
+    /* ── Panels ── */
+    .panel {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .panel-head {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg3);
+    }
+
+    .panel-title {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .panel-body {
+      padding: 16px;
+    }
+
+    /* ── Canvas area ── */
+    .canvases {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .canvas-wrap {
+      position: relative;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--bg);
+    }
+
+    .canvas-wrap canvas {
+      display: block;
+      width: 100%;
+    }
+
+    .canvas-label {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      padding: 3px 7px;
+      border-radius: 4px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .lbl-linear {
+      background: var(--linear-dim);
+      color: var(--linear);
+      border: 1px solid rgba(74, 222, 128, 0.25);
+    }
+
+    .lbl-wind {
+      background: var(--wind-dim);
+      color: var(--wind);
+      border: 1px solid rgba(251, 146, 60, 0.25);
+    }
+
+    .lbl-sigma {
+      background: var(--sigma-dim);
+      color: var(--sigma);
+      border: 1px solid rgba(129, 140, 248, 0.25);
+    }
+
+    .canvas-status {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      font-size: 10px;
+      font-family: 'Space Mono', monospace;
+      color: var(--muted);
+    }
+
+    /* ── Velocity graph ── */
+    .graph-wrap {
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      position: relative;
+    }
+
+    .graph-wrap canvas {
+      display: block;
+      width: 100%;
+    }
+
+    .graph-legend {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .legend-item {
+      font-size: 10px;
+      font-family: 'Space Mono', monospace;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 3px;
+      border-radius: 2px;
+    }
+
+    /* ── Controls panel ── */
+    .controls-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .control-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .control-label {
+      font-size: 12px;
+      color: var(--muted);
+      min-width: 90px;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .control-value {
+      font-size: 12px;
+      color: var(--text);
+      min-width: 36px;
+      text-align: right;
+      font-family: 'Space Mono', monospace;
+    }
+
+    input[type=range] {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 3px;
+      background: var(--faint);
+      border-radius: 2px;
+      outline: none;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--sigma);
+      cursor: pointer;
+      border: 2px solid var(--bg2);
+      transition: transform 0.1s;
+    }
+
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    /* ── Stats ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .stat-block {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+
+    .stat-val {
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      font-weight: 700;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .stat-lbl {
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .stat-algo {
+      font-size: 9px;
+      font-family: 'Space Mono', monospace;
+      margin-top: 4px;
+    }
+
+    /* ── Info cards ── */
+    .algo-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .algo-card {
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      padding: 14px;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .algo-card:hover {
+      border-color: var(--border2);
+      background: var(--bg4);
+    }
+
+    .algo-card.active-linear {
+      border-color: rgba(74, 222, 128, 0.4);
+      background: rgba(74, 222, 128, 0.05);
+    }
+
+    .algo-card.active-wind {
+      border-color: rgba(251, 146, 60, 0.4);
+      background: rgba(251, 146, 60, 0.05);
+    }
+
+    .algo-card.active-sigma {
+      border-color: rgba(129, 140, 248, 0.4);
+      background: rgba(129, 140, 248, 0.05);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .card-name {
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .card-tag {
+      font-size: 9px;
+      padding: 2px 7px;
+      border-radius: 3px;
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .tag-heuristic {
+      background: var(--wind-dim);
+      color: var(--wind);
+    }
+
+    .tag-bio {
+      background: var(--sigma-dim);
+      color: var(--sigma);
+    }
+
+    .tag-basic {
+      background: var(--linear-dim);
+      color: var(--linear);
+    }
+
+    .card-desc {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 10px;
+    }
+
+    .card-credit {
+      border-top: 1px solid var(--border);
+      padding-top: 8px;
+      font-size: 10px;
+      color: var(--faint);
+      font-family: 'Space Mono', monospace;
+      line-height: 1.6;
+    }
+
+    .card-credit a {
+      color: var(--muted);
+      text-decoration: none;
+      border-bottom: 1px solid var(--faint);
+      transition: color 0.15s;
+    }
+
+    .card-credit a:hover {
+      color: var(--text);
+    }
+
+    /* ── Run button ── */
+    .btn-run {
+      width: 100%;
+      padding: 12px;
+      background: transparent;
+      border: 1px solid var(--sigma);
+      border-radius: 8px;
+      color: var(--sigma);
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      margin-top: 4px;
+    }
+
+    .btn-run:hover {
+      background: var(--sigma-dim);
+    }
+
+    .btn-run:active {
+      transform: scale(0.98);
+    }
+
+    .hint {
+      text-align: center;
+      font-size: 11px;
+      color: var(--faint);
+      font-family: 'Space Mono', monospace;
+      margin-top: 8px;
+    }
+
+    /* ── Sub-movement badge ── */
+    .submov-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-top: 6px;
+    }
+
+    .submov-pip {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--faint);
+      transition: background 0.3s;
+    }
+
+    .submov-pip.active {
+      background: var(--sigma);
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      margin-top: 48px;
+      padding-top: 20px;
+      font-size: 11px;
+      color: var(--faint);
+      font-family: 'Space Mono', monospace;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    footer a {
+      color: var(--muted);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      color: var(--text);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <header>
+      <div>
+        <div class="logo">Mouse<span>Movements</span></div>
+        <div class="tagline">Mouse movement algorithm visualizer</div>
+      </div>
+      <div class="header-badges">
+        <div class="badge">v1.0</div>
+        <div class="badge">3 algorithms</div>
+      </div>
+    </header>
+
+    <div class="layout">
+
+      <!-- LEFT: canvases + graph + stats -->
+      <div>
+        <div class="panel" style="margin-bottom:20px">
+          <div class="panel-head">
+            <span class="panel-title">Side-by-side canvas</span>
+            <span style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace">click anywhere to move
+              target</span>
+          </div>
+          <div class="panel-body">
+            <div class="canvases">
+              <div class="canvas-wrap">
+                <canvas id="c-linear" height="220"></canvas>
+                <div class="canvas-label lbl-linear">LINEAR</div>
+                <div class="canvas-status" id="st-linear">ready</div>
+              </div>
+              <div class="canvas-wrap">
+                <canvas id="c-wind" height="220"></canvas>
+                <div class="canvas-label lbl-wind">WINDMOUSE</div>
+                <div class="canvas-status" id="st-wind">ready</div>
+              </div>
+              <div class="canvas-wrap">
+                <canvas id="c-sigma" height="220"></canvas>
+                <div class="canvas-label lbl-sigma">SIGMADRIFT</div>
+                <div class="canvas-status" id="st-sigma">ready</div>
+              </div>
+            </div>
+
+            <div class="graph-wrap">
+              <canvas id="c-graph" height="110"></canvas>
+              <div class="graph-legend">
+                <div class="legend-item">
+                  <div class="legend-dot" style="background:var(--linear)"></div>linear
+                </div>
+                <div class="legend-item">
+                  <div class="legend-dot" style="background:var(--wind)"></div>windmouse
+                </div>
+                <div class="legend-item">
+                  <div class="legend-dot" style="background:var(--sigma)"></div>sigmadrift
+                </div>
+              </div>
+            </div>
+
+            <div class="stats-grid">
+              <div class="stat-block">
+                <div class="stat-val" id="sv-time-l" style="color:var(--linear)">—</div>
+                <div class="stat-lbl">move time</div>
+                <div class="stat-algo" style="color:var(--linear)">linear</div>
+              </div>
+              <div class="stat-block">
+                <div class="stat-val" id="sv-time-w" style="color:var(--wind)">—</div>
+                <div class="stat-lbl">move time</div>
+                <div class="stat-algo" style="color:var(--wind)">windmouse</div>
+              </div>
+              <div class="stat-block">
+                <div class="stat-val" id="sv-time-s" style="color:var(--sigma)">—</div>
+                <div class="stat-lbl">move time</div>
+                <div class="stat-algo" style="color:var(--sigma)">sigmadrift</div>
+              </div>
+              <div class="stat-block">
+                <div class="stat-val" id="sv-sub-l" style="color:var(--linear)">—</div>
+                <div class="stat-lbl">sub-movements</div>
+                <div class="stat-algo" style="color:var(--linear)">linear</div>
+              </div>
+              <div class="stat-block">
+                <div class="stat-val" id="sv-sub-w" style="color:var(--wind)">—</div>
+                <div class="stat-lbl">sub-movements</div>
+                <div class="stat-algo" style="color:var(--wind)">windmouse</div>
+              </div>
+              <div class="stat-block">
+                <div class="stat-val" id="sv-sub-s" style="color:var(--sigma)">—</div>
+                <div class="stat-lbl">sub-movements</div>
+                <div class="stat-algo" style="color:var(--sigma)">sigmadrift</div>
+              </div>
+              <div class="stat-block">
+                <div class="stat-val" id="sv-eff-l" style="color:var(--linear)">—</div>
+                <div class="stat-lbl">path efficiency</div>
+                <div class="stat-algo" style="color:var(--linear)">linear</div>
+              </div>
+              <div class="stat-block">
+                <div class="stat-val" id="sv-eff-w" style="color:var(--wind)">—</div>
+                <div class="stat-lbl">path efficiency</div>
+                <div class="stat-algo" style="color:var(--wind)">windmouse</div>
+              </div>
+              <div class="stat-block">
+                <div class="stat-val" id="sv-eff-s" style="color:var(--sigma)">—</div>
+                <div class="stat-lbl">path efficiency</div>
+                <div class="stat-algo" style="color:var(--sigma)">sigmadrift</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: controls + info cards -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+
+        <div class="panel">
+          <div class="panel-head"><span class="panel-title">Parameters</span></div>
+          <div class="panel-body">
+            <div class="controls-grid">
+              <div class="control-row">
+                <span class="control-label">speed</span>
+                <input type="range" id="sl-speed" min="1" max="10" step="1" value="5">
+                <span class="control-value" id="vl-speed">5</span>
+              </div>
+              <div class="control-row">
+                <span class="control-label">target size</span>
+                <input type="range" id="sl-target" min="8" max="40" step="2" value="20">
+                <span class="control-value" id="vl-target">20</span>
+              </div>
+              <div class="control-row">
+                <span class="control-label">wind str.</span>
+                <input type="range" id="sl-wind" min="1" max="10" step="1" value="4">
+                <span class="control-value" id="vl-wind">4</span>
+              </div>
+              <div class="control-row">
+                <span class="control-label">overshoot</span>
+                <input type="range" id="sl-overshoot" min="0" max="40" step="5" value="15">
+                <span class="control-value" id="vl-overshoot">15%</span>
+              </div>
+              <div class="control-row">
+                <span class="control-label">tremor</span>
+                <input type="range" id="sl-tremor" min="0" max="10" step="1" value="4">
+                <span class="control-value" id="vl-tremor">4</span>
+              </div>
+            </div>
+            <button class="btn-run" id="btn-run" onclick="runAll()">▶ RUN ALL</button>
+            <div class="hint">or click any canvas to place target</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><span class="panel-title">Algorithms</span></div>
+          <div class="panel-body">
+            <div class="algo-cards">
+
+              <div class="algo-card active-linear" id="card-linear">
+                <div class="card-top">
+                  <div class="card-name" style="color:var(--linear)">Linear</div>
+                  <div class="card-tag tag-basic">BASIC</div>
+                </div>
+                <div class="card-desc">
+                  Moves directly toward the target at a constant speed. No curve, no noise, no human quality. The
+                  baseline every other algorithm is compared against.
+                </div>
+                <div class="card-credit">
+                  baseline — no external author
+                </div>
+              </div>
+
+              <div class="algo-card active-wind" id="card-wind">
+                <div class="card-top">
+                  <div class="card-name" style="color:var(--wind)">WindMouse</div>
+                  <div class="card-tag tag-heuristic">HEURISTIC</div>
+                </div>
+                <div class="card-desc">
+                  Simulates "wind" and "gravity" forces that push the cursor toward the target while adding
+                  natural-looking wobble. The dominant aim-assist algorithm for over a decade — visually convincing, but
+                  statistically detectable.
+                </div>
+                <div class="card-credit">
+                  original algorithm by <a href="https://github.com/BenLand100" target="_blank">BenLand100</a> (Java) ·
+                  JS port by <a href="https://github.com/arevi/wind-mouse" target="_blank">arevi</a> ·
+                  reimplemented inline for browser compatibility
+                </div>
+              </div>
+
+              <div class="algo-card active-sigma" id="card-sigma">
+                <div class="card-top">
+                  <div class="card-name" style="color:var(--sigma)">SigmaDrift</div>
+                  <div class="card-tag tag-bio">BIOMECHANICAL</div>
+                </div>
+                <div class="card-desc">
+                  A biomechanically-grounded model built on Plamondon's Kinematic Theory and six interacting motor
+                  control components: sigma-lognormal velocity primitives, Fitts' Law timing, Ornstein-Uhlenbeck drift,
+                  signal-dependent noise, physiological tremor, and gamma-distributed sampling intervals.
+                </div>
+                <div class="card-credit">
+                  algorithm &amp; research by <a href="https://github.com/ck0i" target="_blank">ck0i</a> ·
+                  paper: <a href="https://zenodo.org/records/18872499" target="_blank">zenodo.org/records/18872499</a> ·
+                  C++ source ported to JS for this visualizer
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <footer>
+      <span>mousemovement visualizer — educational demo</span>
+      <span>
+        windmouse by <a href="https://github.com/BenLand100" target="_blank">BenLand100</a> &amp;
+        <a href="https://github.com/arevi" target="_blank">arevi</a> ·
+        sigmadrift by <a href="https://github.com/ck0i" target="_blank">ck0i</a>
+      </span>
+    </footer>
+
+  </div>
+
+  <script>
+    // ─────────────────────────────────────────────
+    // MATH HELPERS
+    // ─────────────────────────────────────────────
+    function randFloat(lo, hi) { return lo + Math.random() * (hi - lo); }
+    function randNormal(mean, std) {
+      let u = 0, v = 0;
+      while (!u) u = Math.random();
+      while (!v) v = Math.random();
+      return mean + std * Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    }
+    function randGamma(shape, scale) {
+      // Marsaglia & Tsang method
+      if (shape < 1) return randGamma(1 + shape, scale) * Math.pow(Math.random(), 1 / shape);
+      const d = shape - 1 / 3;
+      const c = 1 / Math.sqrt(9 * d);
+      while (true) {
+        let x, v;
+        do { x = randNormal(0, 1); v = 1 + c * x; } while (v <= 0);
+        v = v * v * v;
+        const u = Math.random();
+        if (u < 1 - 0.0331 * (x * x) * (x * x)) return d * v * scale;
+        if (Math.log(u) < 0.5 * x * x + d * (1 - v + Math.log(v))) return d * v * scale;
+      }
+    }
+    function normalCDF(x) {
+      const t = 1 / (1 + 0.3275911 * Math.abs(x));
+      const poly = t * (0.254829592 + t * (-0.284496736 + t * (1.421413741 + t * (-1.453152027 + t * 1.061405429))));
+      const erf = 1 - poly * Math.exp(-x * x);
+      return 0.5 * (1 + (x >= 0 ? erf : -erf));
+    }
+    function lognormalCDF(t, t0, mu, sigma) {
+      if (t <= t0) return 0;
+      return normalCDF((Math.log(t - t0) - mu) / sigma);
+    }
+    function lognormalPDF(t, t0, mu, sigma) {
+      if (t <= t0) return 0;
+      const dt = t - t0;
+      const z = (Math.log(dt) - mu) / sigma;
+      return Math.exp(-0.5 * z * z) / (sigma * Math.sqrt(2 * Math.PI) * dt);
+    }
+
+    // ─────────────────────────────────────────────
+    // ALGORITHM 1 — LINEAR
+    // ─────────────────────────────────────────────
+    function genLinear(x0, y0, x1, y1, speed) {
+      const pts = [];
+      const dx = x1 - x0, dy = y1 - y0;
+      const dist = Math.hypot(dx, dy);
+      const steps = Math.max(10, Math.round(dist / (speed * 2)));
+      for (let i = 0; i <= steps; i++) {
+        const t = i / steps;
+        pts.push({ x: x0 + dx * t, y: y0 + dy * t, t: i * (1000 / 60) });
+      }
+      return pts;
+    }
+
+    // ─────────────────────────────────────────────
+    // ALGORITHM 2 — WINDMOUSE (inline port)
+    // original: BenLand100, JS port: arevi
+    // ─────────────────────────────────────────────
+    function genWindMouse(x0, y0, x1, y1, gravity = 9, wind = 3, maxStep = 15, targetArea = 8) {
+      const pts = [{ x: x0, y: y0, t: 0 }];
+      let xs = x0, ys = y0;
+      let vx = 0, vy = 0, wx = 0, wy = 0;
+      let t = 0, step = maxStep;
+
+      for (let iter = 0; iter < 5000; iter++) {
+        const dist = Math.hypot(x1 - xs, y1 - ys);
+        if (dist < 1) break;
+        const w = Math.min(wind, dist);
+        if (dist >= targetArea) {
+          wx = wx / Math.sqrt(3) + randFloat(-w, w) / Math.sqrt(5);
+          wy = wy / Math.sqrt(3) + randFloat(-w, w) / Math.sqrt(5);
+        } else {
+          wx /= Math.sqrt(3); wy /= Math.sqrt(3);
+          if (step < 3) step = randFloat(3, 6);
+          else step /= Math.sqrt(5);
+        }
+        vx += wx + gravity * (x1 - xs) / dist;
+        vy += wy + gravity * (y1 - ys) / dist;
+        const vmag = Math.hypot(vx, vy);
+        if (vmag > step) {
+          const r = step / 2 + randFloat(0, step / 2);
+          vx = vx / vmag * r; vy = vy / vmag * r;
+        }
+        xs += vx; ys += vy;
+        t += randFloat(5, 15);
+        pts.push({ x: xs, y: ys, t });
+      }
+      pts.push({ x: x1, y: y1, t: t + 8 });
+      return pts;
+    }
+
+    // ─────────────────────────────────────────────
+    // ALGORITHM 3 — SIGMADRIFT (JS port)
+    // original C++ by ck0i — zenodo.org/records/18872499
+    // ─────────────────────────────────────────────
+    function genSigmaDrift(x0, y0, x1, y1, cfg = {}) {
+      const c = Object.assign({
+        fitts_a: 50, fitts_b: 150, target_width: 20,
+        undershoot_min: 0.92, undershoot_max: 0.97,
+        peak_time_ratio: 0.35, primary_sigma_min: 0.18, primary_sigma_max: 0.28,
+        overshoot_prob: 0.15, overshoot_min: 1.02, overshoot_max: 1.08,
+        correction_sigma_min: 0.12, correction_sigma_max: 0.20,
+        second_correction_prob: 0.25, curvature_scale: 0.025,
+        ou_theta: 3.5, ou_sigma: 1.2,
+        tremor_freq_min: 8, tremor_freq_max: 12,
+        tremor_amp_min: 0.15, tremor_amp_max: 0.55,
+        sdn_k: 0.04, sample_dt_mean: 7.8, gamma_shape: 3.5
+      }, cfg);
+
+      const dx = x1 - x0, dy = y1 - y0;
+      const distance = Math.hypot(dx, dy);
+      if (distance < 1) return [{ x: x0, y: y0, t: 0 }, { x: x1, y: y1, t: 50 }];
+
+      const direction = Math.atan2(dy, dx);
+      const tx = dx / distance, ty = dy / distance;
+      const nx = -ty, ny = tx;
+
+      const id = Math.log2(distance / c.target_width + 1);
+      let mt = (c.fitts_a + c.fitts_b * id) * Math.exp(randNormal(0, 0.08));
+      mt = Math.max(mt, 80);
+
+      const overshoot = Math.random() < c.overshoot_prob;
+      const reach = overshoot
+        ? randFloat(c.overshoot_min, c.overshoot_max)
+        : randFloat(c.undershoot_min, c.undershoot_max);
+
+      const primaryD = distance * reach;
+      const primarySigma = randFloat(c.primary_sigma_min, c.primary_sigma_max);
+      const peakT = mt * randFloat(c.peak_time_ratio - 0.03, c.peak_time_ratio + 0.03);
+      const primaryMu = Math.log(peakT) + primarySigma * primarySigma;
+
+      const corrections = [];
+      const remaining = distance - primaryD;
+      if (Math.abs(remaining) > 0.5) {
+        const dir = remaining > 0 ? 1 : -1;
+        const cD = Math.abs(remaining) * randFloat(0.88, 1.02);
+        const cS = randFloat(c.correction_sigma_min, c.correction_sigma_max);
+        const cPeak = mt * randFloat(0.12, 0.18);
+        const cT0 = mt * randFloat(0.55, 0.68);
+        corrections.push({ D: cD, t0: cT0, mu: Math.log(cPeak) + cS * cS, sigma: cS, dirX: tx * dir, dirY: ty * dir });
+
+        const left = remaining - cD * dir;
+        if (Math.abs(left) > 0.3 && Math.random() < c.second_correction_prob) {
+          const d2 = left > 0 ? 1 : -1;
+          const cD2 = Math.abs(left) * randFloat(0.85, 1.05);
+          const cS2 = randFloat(0.10, 0.16);
+          const cP2 = mt * randFloat(0.08, 0.12);
+          corrections.push({ D: cD2, t0: mt * randFloat(0.78, 0.88), mu: Math.log(cP2) + cS2 * cS2, sigma: cS2, dirX: tx * d2, dirY: ty * d2 });
+        }
+      }
+
+      // Direction-dependent curvature
+      const sa = Math.abs(Math.sin(direction)), ca = Math.abs(Math.cos(direction));
+      const dirFactor = 0.5 + 0.8 * sa - 0.15 * ca;
+      const curvAmp = distance * c.curvature_scale * dirFactor * randNormal(0, 1);
+
+      function curvatureProfile(s) {
+        if (s <= 0 || s >= 1) return 0;
+        const v = s * s * (1 - s) * (1 - s) * (1 - s);
+        const norm = 0.4 * 0.4 * 0.6 * 0.6 * 0.6;
+        return v / norm;
+      }
+
+      const tremorFreq = randFloat(c.tremor_freq_min, c.tremor_freq_max);
+      const tremorAmp = randFloat(c.tremor_amp_min, c.tremor_amp_max);
+      const tphX = randFloat(0, 2 * Math.PI), tphY = randFloat(0, 2 * Math.PI);
+      let ouX = 0, ouY = 0;
+
+      const totalT = mt * 1.15;
+      const gScale = c.sample_dt_mean / c.gamma_shape;
+      const times = [0];
+      for (let t = 0; t < totalT;) {
+        const dt = Math.min(Math.max(randGamma(c.gamma_shape, gScale), 2), 25);
+        t += dt;
+        if (t <= totalT + 15) times.push(t);
+      }
+
+      const pts = [];
+      for (let i = 0; i < times.length; i++) {
+        const t = times[i];
+        const dtMs = i > 0 ? (t - times[i - 1]) : c.sample_dt_mean;
+        const dtS = dtMs / 1000;
+
+        const s = lognormalCDF(t, 0, primaryMu, primarySigma);
+        let bx = x0 + tx * primaryD * s;
+        let by = y0 + ty * primaryD * s;
+
+        bx += nx * curvAmp * curvatureProfile(s);
+        by += ny * curvAmp * curvatureProfile(s);
+
+        for (const cor of corrections) {
+          const cs = lognormalCDF(t, cor.t0, cor.mu, cor.sigma);
+          bx += cor.dirX * cor.D * cs;
+          by += cor.dirY * cor.D * cs;
+        }
+
+        const speed = primaryD * lognormalPDF(t, 0, primaryMu, primarySigma)
+          + corrections.reduce((acc, c) => acc + c.D * lognormalPDF(t, c.t0, c.mu, c.sigma), 0);
+
+        // OU process
+        ouX += -c.ou_theta * ouX * dtS + c.ou_sigma * Math.sqrt(dtS) * randNormal(0, 1);
+        ouY += -c.ou_theta * ouY * dtS + c.ou_sigma * Math.sqrt(dtS) * randNormal(0, 1);
+
+        // Tremor (suppressed at high speed)
+        const tS = t / 1000;
+        const tremMod = 1 / (1 + speed * 0.3);
+        const trX = tremorAmp * tremMod * Math.sin(2 * Math.PI * tremorFreq * tS + tphX);
+        const trY = tremorAmp * tremMod * Math.sin(2 * Math.PI * tremorFreq * tS + tphY);
+
+        // Signal-dependent noise
+        const sdnX = c.sdn_k * speed * randNormal(0, 1);
+        const sdnY = c.sdn_k * speed * randNormal(0, 1);
+
+        pts.push({ x: bx + ouX + trX + sdnX, y: by + ouY + trY + sdnY, t });
+      }
+      return pts;
+    }
+
+    // ─────────────────────────────────────────────
+    // METRICS
+    // ─────────────────────────────────────────────
+    function computeMetrics(pts, straightDist) {
+      if (pts.length < 2) return { mt: 0, pathLen: 0, efficiency: 1, peakSpeed: 0, subMov: 1 };
+      const mt = pts[pts.length - 1].t - pts[0].t;
+      let pathLen = 0, maxSpeed = 0;
+      const speeds = [0];
+      for (let i = 1; i < pts.length; i++) {
+        const dx = pts[i].x - pts[i - 1].x, dy = pts[i].y - pts[i - 1].y;
+        const dt = pts[i].t - pts[i - 1].t;
+        const seg = Math.hypot(dx, dy);
+        pathLen += seg;
+        const spd = dt > 0 ? seg / dt : 0;
+        speeds.push(spd);
+        if (spd > maxSpeed) maxSpeed = spd;
+      }
+      const efficiency = pathLen > 0 ? Math.min(1, straightDist / pathLen) : 1;
+      const threshold = maxSpeed * 0.15;
+      let peaks = 0;
+      for (let i = 2; i < speeds.length - 1; i++) {
+        if (speeds[i] > threshold && speeds[i] > speeds[i - 1] && speeds[i] > speeds[i + 1]) peaks++;
+      }
+      return { mt: Math.round(mt), pathLen, efficiency: +efficiency.toFixed(3), peakSpeed: maxSpeed, subMov: Math.max(peaks, 1) };
+    }
+
+    // ─────────────────────────────────────────────
+    // CANVAS RENDERING
+    // ─────────────────────────────────────────────
+    const COLORS = { linear: '#4ade80', wind: '#fb923c', sigma: '#818cf8' };
+    const canvases = {
+      linear: document.getElementById('c-linear'),
+      wind: document.getElementById('c-wind'),
+      sigma: document.getElementById('c-sigma'),
+      graph: document.getElementById('c-graph'),
+    };
+    const ctxs = {};
+    for (const k in canvases) ctxs[k] = canvases[k].getContext('2d');
+
+    let W = 0, H = 220;
+    let target = { x: 0, y: 0 };
+    let start = { x: 0, y: 0 };
+
+    function resize() {
+      const w = canvases.linear.parentElement.clientWidth;
+      W = w;
+      for (const k of ['linear', 'wind', 'sigma']) {
+        canvases[k].width = w;
+        canvases[k].height = H;
+      }
+      canvases.graph.width = document.getElementById('c-graph').parentElement.clientWidth;
+      canvases.graph.height = 110;
+      target = { x: Math.round(W * 0.75), y: Math.round(H * 0.5) };
+      start = { x: Math.round(W * 0.15), y: Math.round(H * 0.5) };
+      drawIdle();
+    }
+
+    function drawIdle() {
+      for (const k of ['linear', 'wind', 'sigma']) {
+        const ctx = ctxs[k];
+        ctx.clearRect(0, 0, W, H);
+        drawGrid(ctx, W, H);
+        drawTarget(ctx, target.x, target.y, getTargetRadius(), COLORS[k]);
+        drawCrosshair(ctx, start.x, start.y, COLORS[k]);
+      }
+      drawGraphIdle();
+    }
+
+    function drawGrid(ctx, w, h) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < w; x += 30) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+      for (let y = 0; y < h; y += 30) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+    }
+
+    function drawTarget(ctx, x, y, r, color) {
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.globalAlpha = 0.6;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = color;
+      ctx.globalAlpha = 0.8;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    function drawCrosshair(ctx, x, y, color) {
+      const s = 8;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.globalAlpha = 0.9;
+      ctx.beginPath(); ctx.moveTo(x - s, y); ctx.lineTo(x + s, y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x, y - s); ctx.lineTo(x, y + s); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2);
+      ctx.fillStyle = color; ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    function drawTrail(ctx, pts, color, progress) {
+      if (pts.length < 2) return;
+      const n = Math.max(2, Math.round(pts.length * progress));
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (let i = 1; i < n; i++) ctx.lineTo(pts[i].x, pts[i].y);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.globalAlpha = 0.5;
+      ctx.stroke();
+      // dots
+      ctx.globalAlpha = 0.25;
+      for (let i = 0; i < n; i++) {
+        ctx.beginPath();
+        ctx.arc(pts[i].x, pts[i].y, 1.5, 0, Math.PI * 2);
+        ctx.fillStyle = color; ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function drawGraphIdle() {
+      const ctx = ctxs.graph;
+      const w = canvases.graph.width, h = canvases.graph.height;
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = 'rgba(255,255,255,0.04)';
+      ctx.font = '11px Space Mono, monospace';
+      ctx.fillText('velocity profile — run to populate', 12, h / 2 + 4);
+    }
+
+    function drawVelocityGraph(allPts) {
+      const ctx = ctxs.graph;
+      const w = canvases.graph.width, h = canvases.graph.height;
+      ctx.clearRect(0, 0, w, h);
+
+      function getSpeeds(pts) {
+        const out = [];
+        for (let i = 1; i < pts.length; i++) {
+          const dx = pts[i].x - pts[i - 1].x, dy = pts[i].y - pts[i - 1].y;
+          const dt = pts[i].t - pts[i - 1].t;
+          if (dt > 0) out.push({ t: pts[i].t, v: Math.hypot(dx, dy) / dt });
+        }
+        return out;
+      }
+
+      const entries = [
+        { pts: allPts.linear, color: COLORS.linear },
+        { pts: allPts.wind, color: COLORS.wind },
+        { pts: allPts.sigma, color: COLORS.sigma },
+      ].filter(e => e.pts && e.pts.length > 1);
+
+      if (!entries.length) { drawGraphIdle(); return; }
+
+      let maxT = 1, maxV = 0.001;
+      const speedSets = entries.map(e => {
+        const s = getSpeeds(e.pts);
+        s.forEach(p => { if (p.t > maxT) maxT = p.t; if (p.v > maxV) maxV = p.v; });
+        return s;
+      });
+
+      // grid
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.lineWidth = 1;
+      for (let i = 1; i <= 3; i++) {
+        const y = h - (h * i / 4);
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      }
+
+      const pad = 8;
+      entries.forEach((e, idx) => {
+        const speeds = speedSets[idx];
+        if (speeds.length < 2) return;
+        ctx.beginPath();
+        ctx.moveTo(speeds[0].t / maxT * w, h - pad - (speeds[0].v / maxV) * (h - pad * 2));
+        for (let i = 1; i < speeds.length; i++) {
+          const px = speeds[i].t / maxT * w;
+          const py = h - pad - (speeds[i].v / maxV) * (h - pad * 2);
+          ctx.lineTo(px, Math.max(pad, Math.min(h - pad, py)));
+        }
+        ctx.strokeStyle = e.color;
+        ctx.lineWidth = 1.5;
+        ctx.globalAlpha = 0.8;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      });
+    }
+
+    // ─────────────────────────────────────────────
+    // ANIMATION
+    // ─────────────────────────────────────────────
+    let animState = {};
+
+    function animatePath(key, pts, color, onDone) {
+      const ctx = ctxs[key];
+      const totalTime = pts[pts.length - 1].t - pts[0].t;
+      const startReal = performance.now();
+
+      function frame(now) {
+        const elapsed = now - startReal;
+        const progress = Math.min(elapsed / totalTime, 1);
+        ctx.clearRect(0, 0, W, H);
+        drawGrid(ctx, W, H);
+        drawTrail(ctx, pts, color, progress);
+        drawTarget(ctx, target.x, target.y, getTargetRadius(), color);
+        const i = Math.max(0, Math.round(progress * (pts.length - 1)));
+        drawCrosshair(ctx, pts[i].x, pts[i].y, color);
+        if (progress < 1) {
+          animState[key] = requestAnimationFrame(frame);
+        } else {
+          drawCrosshair(ctx, pts[pts.length - 1].x, pts[pts.length - 1].y, color);
+          document.getElementById('st-' + key).textContent = 'done';
+          if (onDone) onDone();
+        }
+      }
+      if (animState[key]) cancelAnimationFrame(animState[key]);
+      animState[key] = requestAnimationFrame(frame);
+    }
+
+    // ─────────────────────────────────────────────
+    // PARAM HELPERS
+    // ─────────────────────────────────────────────
+    function getSpeed() { return parseInt(document.getElementById('sl-speed').value); }
+    function getTargetRadius() { return parseInt(document.getElementById('sl-target').value); }
+    function getWindStr() { return parseInt(document.getElementById('sl-wind').value); }
+    function getOvershoot() { return parseInt(document.getElementById('sl-overshoot').value) / 100; }
+    function getTremor() { return parseInt(document.getElementById('sl-tremor').value) / 10; }
+
+    // ─────────────────────────────────────────────
+    // RUN
+    // ─────────────────────────────────────────────
+    let lastPts = {};
+
+    function runAll() {
+      const s = start, t2 = target;
+      const speed = getSpeed();
+      const tw = getTargetRadius() * 2;
+
+      const linearPts = genLinear(s.x, s.y, t2.x, t2.y, speed);
+      const windPts = genWindMouse(s.x, s.y, t2.x, t2.y, 9, getWindStr(), 12 + speed, 8);
+      const sigPts = genSigmaDrift(s.x, s.y, t2.x, t2.y, {
+        target_width: tw,
+        overshoot_prob: getOvershoot(),
+        tremor_amp_max: 0.15 + getTremor(),
+        ou_sigma: 0.8 + getTremor() * 0.4,
+      });
+
+      lastPts = { linear: linearPts, wind: windPts, sigma: sigPts };
+
+      const dist = Math.hypot(t2.x - s.x, t2.y - s.y);
+      const mL = computeMetrics(linearPts, dist);
+      const mW = computeMetrics(windPts, dist);
+      const mS = computeMetrics(sigPts, dist);
+
+      document.getElementById('sv-time-l').textContent = mL.mt + 'ms';
+      document.getElementById('sv-time-w').textContent = mW.mt + 'ms';
+      document.getElementById('sv-time-s').textContent = mS.mt + 'ms';
+      document.getElementById('sv-sub-l').textContent = mL.subMov;
+      document.getElementById('sv-sub-w').textContent = mW.subMov;
+      document.getElementById('sv-sub-s').textContent = mS.subMov;
+      document.getElementById('sv-eff-l').textContent = mL.efficiency;
+      document.getElementById('sv-eff-w').textContent = mW.efficiency;
+      document.getElementById('sv-eff-s').textContent = mS.efficiency;
+
+      ['linear', 'wind', 'sigma'].forEach(k => {
+        document.getElementById('st-' + k).textContent = 'running…';
+      });
+
+      animatePath('linear', linearPts, COLORS.linear);
+      animatePath('wind', windPts, COLORS.wind);
+      animatePath('sigma', sigPts, COLORS.sigma, () => {
+        drawVelocityGraph(lastPts);
+      });
+    }
+
+    // ─────────────────────────────────────────────
+    // CANVAS CLICK — place target
+    // ─────────────────────────────────────────────
+    ['linear', 'wind', 'sigma'].forEach(key => {
+      canvases[key].addEventListener('click', e => {
+        const rect = canvases[key].getBoundingClientRect();
+        const scaleX = canvases[key].width / rect.width;
+        const scaleY = canvases[key].height / rect.height;
+        // set start to current crosshair end pos if we have pts
+        if (lastPts[key] && lastPts[key].length) {
+          const last = lastPts[key][lastPts[key].length - 1];
+          start = { x: Math.round(last.x), y: Math.round(last.y) };
+        }
+        target = {
+          x: Math.round((e.clientX - rect.left) * scaleX),
+          y: Math.round((e.clientY - rect.top) * scaleY),
+        };
+        runAll();
+      });
+    });
+
+    // ─────────────────────────────────────────────
+    // SLIDERS
+    // ─────────────────────────────────────────────
+    const sliders = [
+      ['sl-speed', 'vl-speed', v => v],
+      ['sl-target', 'vl-target', v => v],
+      ['sl-wind', 'vl-wind', v => v],
+      ['sl-overshoot', 'vl-overshoot', v => v + '%'],
+      ['sl-tremor', 'vl-tremor', v => v],
+    ];
+    sliders.forEach(([id, vid, fmt]) => {
+      const el = document.getElementById(id);
+      const vl = document.getElementById(vid);
+      el.addEventListener('input', () => { vl.textContent = fmt(el.value); });
+    });
+
+    // ─────────────────────────────────────────────
+    // INIT
+    // ─────────────────────────────────────────────
+    window.addEventListener('resize', () => { resize(); lastPts = {}; });
+    resize();
+  </script>
+</body>
+
+</html>
