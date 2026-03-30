@@ -12,12 +12,14 @@
  *   creditHtml string  innerHTML for credit line (may contain <a> tags)
  */
 
-import { genLinear, meta as linearMeta } from './linear.js';
-import { genWindMouse, meta as windMeta } from './windmouse.js';
-import { genSigmaDrift, meta as sigmaMeta } from './sigmadrift.js';
+import { genLinear,      meta as linearMeta  } from './linear.js';
+import { genCubicBezier, meta as bezierMeta  } from './cubicbezier.js';
+import { genWindMouse,   meta as windMeta    } from './windmouse.js';
+import { genSigmaDrift,  meta as sigmaMeta   } from './sigmadrift.js';
 
 export const ALGOS = [
-  { ...linearMeta, gen: genLinear },
-  { ...windMeta,   gen: genWindMouse },
-  { ...sigmaMeta,  gen: genSigmaDrift },
+  { ...linearMeta,  gen: genLinear },
+  { ...bezierMeta,  gen: genCubicBezier },
+  { ...windMeta,    gen: genWindMouse },
+  { ...sigmaMeta,   gen: genSigmaDrift },
 ];

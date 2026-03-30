@@ -13,6 +13,7 @@ const COLOR_MAP = Object.fromEntries(ALGOS.map(a => [a.id, `var(--${a.id})`]));
 // Resolved values for canvas (CSS vars need resolving manually)
 const CANVAS_COLORS = {
   linear: '#4ade80',
+  bezier: '#22d3ee',
   wind:   '#fb923c',
   sigma:  '#818cf8',
 };
@@ -66,8 +67,11 @@ export function mount(root) {
             </div>
           </div>
 
-          <div class="mm-panel">
-            <div class="mm-panel-head"><span class="mm-panel-title">Algorithms</span></div>
+          <div class="mm-panel is-collapsible is-open" id="panel-algos">
+            <div class="mm-panel-head" id="panel-algos-head">
+              <span class="mm-panel-title">Algorithms</span>
+              <span class="mm-panel-toggle" aria-label="toggle">&#9660;</span>
+            </div>
             <div class="mm-panel-body">
               <div class="mm-algo-cards" id="algo-cards"></div>
             </div>
@@ -265,6 +269,12 @@ export function mount(root) {
       y: Math.round(CANVAS_H * (0.2 + Math.random() * 0.6)),
     };
     runAll();
+  });
+
+  // ── COLLAPSIBLE ALGORITHMS PANEL ──────────────────────────
+  const algoPanel = root.querySelector('#panel-algos');
+  root.querySelector('#panel-algos-head').addEventListener('click', () => {
+    algoPanel.classList.toggle('is-open');
   });
 
   // ── INIT ─────────────────────────────────────────────────
